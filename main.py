@@ -1,29 +1,16 @@
-from machine import PWM
 from machine import Pin
 import time
 
-p_out = Pin('P22', mode=Pin.OUT)
-p_out.value(0)
+redLed = Pin('P3', mode=Pin.OUT)
+yellowLed = Pin('P4', mode=Pin.OUT)
+whiteLed = Pin('P5', mode=Pin.OUT)
 
-pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
-# create pwm channel on pin P21 with a duty cycle of 50%
-pwm_c = pwm.channel(0, pin='P21', duty_cycle=0.2)
-time.sleep(3)
-pwm_c.duty_cycle(0.5) # change the duty cycle to 50%
-time.sleep(3)
-pwm_c.duty_cycle(0.3) # change the duty cycle to 30%
-time.sleep(3)
-pwm_c.duty_cycle(0.0) # change the duty cycle to 30%
-
-p_out = Pin('P21', mode=Pin.OUT)
-p_out.value(0)
-
-pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
-# create pwm channel on pin P21 with a duty cycle of 50%
-pwm_c = pwm.channel(0, pin='P22', duty_cycle=0.2)
-time.sleep(3)
-pwm_c.duty_cycle(0.5) # change the duty cycle to 50%
-time.sleep(3)
-pwm_c.duty_cycle(0.3) # change the duty cycle to 30%
-time.sleep(3)
-pwm_c.duty_cycle(0.0) # change the duty cycle to 30%
+while True:
+    redLed.value(1)
+    yellowLed.value(1)
+    whiteLed.value(0)
+    time.sleep(3)
+    redLed.value(0)
+    yellowLed.value(0)
+    whiteLed.value(1)
+    time.sleep(3)

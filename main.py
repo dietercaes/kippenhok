@@ -1,26 +1,8 @@
-import pycom
+from machine import PWM
 import time
-import machine
-from machine import Pin
-from dth import DTH
 
-pycom.heartbeat(False)
-pycom.rgbled(0x000008) # blue
-
-adc = machine.ADC()             # create an ADC object
-apin = adc.channel(pin='P16', attn=adc.ATTN_0DB)   # create an analog pin on P16 to read load cell
-weight = apin()                    # read an analog value
-
-th = DTH(Pin('P23', mode=Pin.OPEN_DRAIN),1)
+pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
+# create pwm channel on pin P21 with a duty cycle of 50%
+pwm_c = pwm.channel(0, pin='P21', duty_cycle=0.5)
 time.sleep(2)
-result = th.read()
-if result.is_valid():
-    pycom.rgbled(0x001000) # green
-    print('analog val: ')
-    print(weight)
-    print('Temperature: {:3.2f}'.format(result.temperature/1.0))
-    print('Humidity: {:3.2f}'.format(result.humidity/1.0))
-
-while True:
-    weight = apin()                    # read an analog value
-    print(weight)
+pwm_c.duty_cycle(0.3) # change the duty cycle to 30%

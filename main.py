@@ -1,60 +1,86 @@
 from machine import PWM
 from machine import Pin
+from machine import deepsleep
 from dth import DTH
 import machine
 import time
 import pycom
 
-pycom.heartbeat(False)
+### CONSTANTS ###
+MAXTEMP = 20    # Desired inside temperature of chickencoup
+DOOROPENTIME = 30 # Ammount of time it takes to open the door
+DOORCLOSETIME = 30 # Ammount of time it takes to let the door close (might be different to open time)
 
-#########LOADCELL#############
-#adc = machine.ADC()             # create an ADC object
-#apin = adc.channel(pin='P2', attn=adc.ATTN_0DB)   # create an analog pin on P2 to read load cell
-#weight = apin()                    # read an analog value
-########END of LOADCELL###########
+th = DTH(Pin('P23', mode=Pin.OPEN_DRAIN),1) # Creating DHT object to get temperature and humidity
+firstLed = Pin('P22', mode=Pin.OUT)
+secondLed = Pin('P21', mode=Pin.OUT)
+thirdLed = Pin('P20', mode=Pin.OUT)
 
-####DHT#########
-th = DTH(Pin('P23', mode=Pin.OPEN_DRAIN),1)
-time.sleep(2)
-result = th.read()
-if result.is_valid():
-    pycom.rgbled(0x001000) # green
-    print('analog val: ')   # print analog value of loadcell
-    print(weight)           # print analog value of loadcell
-    print('Temperature: {:3.2f}'.format(result.temperature/1.0))
-    print('Humidity: {:3.2f}'.format(result.humidity/1.0))
-####END of DHT##########
+### FUNCTIONS ###
+def controlClimate():   # Read temperature and humidity from DHT 22 and activate fan if temp is to high.
+    result = th.read()
+    if result.is_valid():
+        if result.temperature > MAXTEMP:
+            fanGND = Pin('P10', mode=Pin.OUT) #Declaring pin as digital output.
+            fanGND.value(0) # Setting pin to zero/ GND for fan.
+            pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
+            pwm_c_motor = pwm.channel(0, pin='P11', duty_cycle=1.0) # create pwm channel on pin P9 with a duty cycle of 50%
 
-##########MOTOR + FAN###########
-motorGND = Pin('P8', mode=Pin.OUT) # GND side for motor and fan.
-fanGND = Pin('P10', mode=Pin.OUT)
-motorGND.value(0)
-fanGND.value(0)
+def openDoor():
+    motorGND = Pin('P8', mode=Pin.OUT) # GND side for door motor
+    motorGND.value(0)
 
-pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
-# create pwm channel on pin P9 with a duty cycle of 50%
-pwm_c_motor = pwm.channel(0, pin='P9', duty_cycle=1.0)
-time.sleep(3)
+    pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
+    # create pwm channel on pin P9 with a duty cycle of 100%
+    pwm_c_motor = pwm.channel(0, pin='P9', duty_cycle=1.0)
+    time.sleep(DOOROPENTIME)
 
-motorGND = Pin('P9', mode=Pin.OUT)
-motorGND.value(0)
+def closeDoor():
+    motorGND = Pin('P9', mode=Pin.OUT) # GND side for door motor
+    motorGND.value(0)
 
+    pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
+    # create pwm channel on pin P8 with a duty cycle of 100%
+    pwm_c_motor = pwm.channel(0, pin='P8', duty_cycle=1.0)
+    time.sleep(DOORCLOSETIME)
 
-pwm_c = pwm.channel(0, pin='P8', duty_cycle=1.0)   # Changing PWM and GND pin of motor to turn the other way.
-time.sleep(3)
-###########END of MOTOR + FAN##############
+def setLeds(valThree, valTwo, valOne): # setting leds to 0 or 1 in backwards order to read it as binary
+    firstLed.value(valOne)
+    secondLed.value(valTwo)
+    thirdLed.value(valThree)
 
-#####LEDS#######
-redLed = Pin('P22', mode=Pin.OUT)
-yellowLed = Pin('P21', mode=Pin.OUT)
-whiteLed = Pin('P20', mode=Pin.OUT)
+def showEggs(ammount):  # Show the ammount of eggs in binary with leds on the chickencoup
+    if ammount == 0:
+        setLeds(0, 0, 0)
+        if ammount == 1 :
+            setLeds(0, 0, 1)
+            if ammount == 2:
+                setLeds(0, 1, 0)
+                if ammount == 3:
+                    setLeds(0, 1, 1)
+                    if ammount == 4:
+                        setLeds(1, 0, 0)
 
-while True:
-    redLed.value(1)
-    yellowLed.value(1)
-    whiteLed.value(0)
-    time.sleep(3)
-    redLed.value(0)
-    yellowLed.value(0)
-    whiteLed.value(1)
-    time.sleep(3)
+def calculateEggs():    # Read out the loadcell to determine the ammount of eggs layed that day
+    adc = machine.ADC() # create an ADC object
+    apin = adc.channel(pin='P2', attn=adc.ATTN_0DB) # create an analog pin on P2 to read load cell
+    weight = apin() # read an analog value
+
+    if weight > 60:
+        showEggs(1)
+        if weight > 120:
+            showEggs(2)
+            if weight > 180:
+                showEggs(3)
+                if weight > 240:
+                    showEggs(4)
+    else: showEggs(0)
+
+pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
+controlClimate()
+#while True:
+#    controlClimate()
+#    machine.deepsleep(3600000)
+openDoor()
+calculateEggs()
+closeDoor()

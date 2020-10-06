@@ -78,7 +78,7 @@ def calculateEggs():    # Read out the loadcell to determine the ammount of eggs
 
 pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
 controlClimate()
-#while True:
+#while True:    # TODO: Make a loop to controlClimate every hour using deepsleep in between and calculateEggs + openDoor every morning at 7AM. Close door at 8 PM
 #    controlClimate()
 #    machine.deepsleep(3600000)
 openDoor()

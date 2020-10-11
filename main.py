@@ -2,6 +2,7 @@ from machine import PWM
 from machine import Pin
 from machine import deepsleep
 from machine import Timer
+from machine import RTC
 from dth import DTH
 import machine
 import time
@@ -12,10 +13,16 @@ MAXTEMP = 20    # Desired inside temperature of chickencoup
 DOOROPENTIME = 30 # Ammount of time it takes to open the door
 DOORCLOSETIME = 30 # Ammount of time it takes to let the door close (might be different to open time)
 
+p_in = Pin('P19', mode=Pin.IN, pull=Pin.PULL_UP)
 th = DTH(Pin('P23', mode=Pin.OPEN_DRAIN),1) # Creating DHT object to get temperature and humidity
 firstLed = Pin('P22', mode=Pin.OUT)
 secondLed = Pin('P21', mode=Pin.OUT)
 thirdLed = Pin('P20', mode=Pin.OUT)
+
+rtc = RTC()
+rtc.init((2020, 1, 1, 0, 0, 0, 0, 0))
+lasttime = rtc.now()
+machine.pin_sleep_wakeup(pins=(p_in);, mode=machine.WAKEUP_ANY_HIGH, enable_pull=True)
 
 ### FUNCTIONS ###
 def controlClimate():   # Read temperature and humidity from DHT 22 and activate fan if temp is to high.
@@ -80,30 +87,28 @@ def calculateEggs():    # Read out the loadcell to determine the ammount of eggs
                     showEggs(4)
     else: showEggs(0)
 
-class Clock:
 
-    def _init_(self):
-        self.hours = 0
-        self.__alarm = Timer.Alarm(self._hours_handler, 1, periodic=True)
-
-    def _hours_handler(self, alarm):
-        self.hours += 1
-        print("%02d hours have passed" % self.hours)
-        if self.hours == 11:
-            closeDoor()
-
-clock = Clock()
-
-pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
-controlClimate()
-while True:
-    controlClimate()
-
-pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
-controlClimate()
-#while True:    # TODO: Make a loop to controlClimate every hour using deepsleep in between and calculateEggs + openDoor every morning at 7AM. Close door at 8 PM
-#    controlClimate()
-#    machine.deepsleep(3600000)
+calculateEggs()
 openDoor()
-#calculateEggs()
-closeDoor()
+
+while True:
+    counter = 0
+    pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
+    if machine.wake_reason() == machine.PIN_WAKE:
+        if p_in() == 1:# p_in(): get value, 0 or 1
+            openDoor()
+    if machine.wake_reason() == machine.PIN_WAKE:
+        if p_in() == 0:
+            closeDoor()
+    if counter == 16:
+        closeDoor()
+    if counter == 24:
+        calculateEggs()
+        openDoor()
+        counter = 0
+    #if rtc.now() # Get get the current datetime tuple as (year, month, day, hour, minute, second, usecond, None)
+    controlClimate()
+    counter += 1
+    #machine.deepsleep(59*60*1000) # Put the machine into deepsleep for 59 mins converted to ms
+    # Possible problem with deepsleep on lopy as described in documentation. See following URL
+    # https://docs.pycom.io/datasheets/development/lopy/#deep-sleep

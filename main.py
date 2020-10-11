@@ -47,22 +47,22 @@ def closeDoor():
     time.sleep(DOORCLOSETIME)
     pwm_c_motor = pwm.channel(0, pin='P8', duty_cycle=0.0)
 
-def setLeds(valThree, valTwo, valOne): # setting leds to 0 or 1 in backwards order to read it as binary
-    firstLed.value(valOne)
-    secondLed.value(valTwo)
-    thirdLed.value(valThree)
+def setLeds(tup();): # setting leds to 0 or 1 in backwards order to read it as binary
+    firstLed.value(tup[0])
+    secondLed.value(tup[1])
+    thirdLed.value(tup[2])
 
 def showEggs(ammount):  # Show the ammount of eggs in binary with leds on the chickencoup
-    if ammount == 0:
-        setLeds(0, 0, 0)
-        if ammount == 1 :
-            setLeds(0, 0, 1)
-            if ammount == 2:
-                setLeds(0, 1, 0)
-                if ammount == 3:
-                    setLeds(0, 1, 1)
-                    if ammount == 4:
-                        setLeds(1, 0, 0)
+    leds = (0, 0, 0);   # create tuple to store binary ammount and pass this on to setleds()
+    if ammount >= 4:
+        leds[0] = 1
+        ammount -= 4
+        if ammount >= 2:
+            leds[1] = 1
+            ammount -= 2
+            if ammount == 1:
+                leds[2] = 1
+    setLeds(leds)
 
 
 def calculateEggs():    # Read out the loadcell to determine the ammount of eggs layed that day
@@ -98,20 +98,6 @@ pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
 controlClimate()
 while True:
     controlClimate()
-    (wake_reason, gpio_list) = machine.wake_reason()
-    print("Device running for: " + str(time.ticks_ms()) + "ms")
-    print("Remaining sleep time: " + str(machine.remaining_sleep_time()) + "ms" )
-    if wake_reason == machine.PWRON_WAKE:
-        print("Woke up by reset button")
-    elif wake_reason == machine.PIN_WAKE:
-        print("Woke up by external pin (external interrupt)")
-        print(*gpio_list, sep=", ")
-    elif wake_reason == machine.RTC_WAKE:
-        print("Woke up by RTC (timer ran out)")
-    elif wake_reason == machine.ULP_WAKE:
-        print("Woke up by ULP (capacitive touch)")
-    machine.pin_sleep_wakeup(('P3', 'P4'), mode=machine.WAKEUP_ANY_HIGH, enable_pull=True)
-    #machine.deepsleep(3600000,'P10', enable_pull == True):
 
 pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
 controlClimate()

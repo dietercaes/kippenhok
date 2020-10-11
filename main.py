@@ -1,6 +1,7 @@
 from machine import PWM
 from machine import Pin
 from machine import deepsleep
+from machine import Timer
 from dth import DTH
 import machine
 import time
@@ -24,7 +25,7 @@ def controlClimate():   # Read temperature and humidity from DHT 22 and activate
             fanGND = Pin('P10', mode=Pin.OUT) #Declaring pin as digital output.
             fanGND.value(0) # Setting pin to zero/ GND for fan.
             pwm = PWM(0, frequency=5000)  # use PWM timer 0, with a frequency of 5KHz
-            pwm_c_motor = pwm.channel(0, pin='P11', duty_cycle=1.0) # create pwm channel on pin P9 with a duty cycle of 50%
+            pwm_c_fan = pwm.channel(0, pin='P11', duty_cycle=1.0) # create pwm channel on pin P11 with a duty cycle of 50%
 
 def openDoor():
     motorGND = Pin('P8', mode=Pin.OUT) # GND side for door motor
@@ -34,6 +35,7 @@ def openDoor():
     # create pwm channel on pin P9 with a duty cycle of 100%
     pwm_c_motor = pwm.channel(0, pin='P9', duty_cycle=1.0)
     time.sleep(DOOROPENTIME)
+    pwm_c_motor = pwm.channel(0, pin='P9', duty_cycle=0.0)
 
 def closeDoor():
     motorGND = Pin('P9', mode=Pin.OUT) # GND side for door motor
@@ -43,6 +45,7 @@ def closeDoor():
     # create pwm channel on pin P8 with a duty cycle of 100%
     pwm_c_motor = pwm.channel(0, pin='P8', duty_cycle=1.0)
     time.sleep(DOORCLOSETIME)
+    pwm_c_motor = pwm.channel(0, pin='P8', duty_cycle=0.0)
 
 def setLeds(valThree, valTwo, valOne): # setting leds to 0 or 1 in backwards order to read it as binary
     firstLed.value(valOne)
@@ -61,6 +64,7 @@ def showEggs(ammount):  # Show the ammount of eggs in binary with leds on the ch
                     if ammount == 4:
                         setLeds(1, 0, 0)
 
+
 def calculateEggs():    # Read out the loadcell to determine the ammount of eggs layed that day
     adc = machine.ADC() # create an ADC object
     apin = adc.channel(pin='P2', attn=adc.ATTN_0DB) # create an analog pin on P2 to read load cell
@@ -75,6 +79,39 @@ def calculateEggs():    # Read out the loadcell to determine the ammount of eggs
                 if weight > 240:
                     showEggs(4)
     else: showEggs(0)
+
+class Clock:
+
+    def _init_(self):
+        self.hours = 0
+        self.__alarm = Timer.Alarm(self._hours_handler, 1, periodic=True)
+
+    def _hours_handler(self, alarm):
+        self.hours += 1
+        print("%02d hours have passed" % self.hours)
+        if self.hours == 11:
+            closeDoor()
+
+clock = Clock()
+
+pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
+controlClimate()
+while True:
+    controlClimate()
+    (wake_reason, gpio_list) = machine.wake_reason()
+    print("Device running for: " + str(time.ticks_ms()) + "ms")
+    print("Remaining sleep time: " + str(machine.remaining_sleep_time()) + "ms" )
+    if wake_reason == machine.PWRON_WAKE:
+        print("Woke up by reset button")
+    elif wake_reason == machine.PIN_WAKE:
+        print("Woke up by external pin (external interrupt)")
+        print(*gpio_list, sep=", ")
+    elif wake_reason == machine.RTC_WAKE:
+        print("Woke up by RTC (timer ran out)")
+    elif wake_reason == machine.ULP_WAKE:
+        print("Woke up by ULP (capacitive touch)")
+    machine.pin_sleep_wakeup(('P3', 'P4'), mode=machine.WAKEUP_ANY_HIGH, enable_pull=True)
+    #machine.deepsleep(3600000,'P10', enable_pull == True):
 
 pycom.heartbeat(False)  # turning off LED from LoPy 4 to save energy
 controlClimate()

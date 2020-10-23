@@ -27,7 +27,9 @@ def on_message(mqttc, obj, msg):
 	#Get TTN auto generated json for message
 	payload_json = json.loads(msg.payload)
 	#Decode the payload of the final message from json -- it is the json we are looking for
-	message = base64.b64decode(payload_json.get('payload_raw').encode('ascii')).decode('ascii')
+	#message = base64.b64decode(payload_json.get('payload_raw').encode('ascii')).decode('ascii')
+	temp = payload_json.get('payload_fields').get('temperature')
+	message = "{{\"temp\": {}}}".format(temp)
 	#send to azure
 	print("Sending to azure: ", message)
 	#Send to the right device

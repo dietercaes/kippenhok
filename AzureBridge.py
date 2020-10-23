@@ -11,9 +11,11 @@ from azure.iot.device import IoTHubDeviceClient, Message
 def sendToAzure(device, message):
     try:
         client = IoTHubDeviceClient.create_from_connection_string(device)
+        client.connect()
         print( "Sending message: {}".format(message))
         message = message.encode('utf8')
         client.send_message(message)
         print ( "Message successfully sent" )
+        client.disconnect()
     except KeyboardInterrupt:
         print ( "IoTHubBridge sample stopped" )

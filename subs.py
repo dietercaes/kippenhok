@@ -6,7 +6,7 @@ import base64
 from AzureBridge import sendToAzure
 
 #Azure connection string
-CONNECTION_STRING_1 = "HostName=Slim-Kippenhok-IoTHub.azure-devices.net;DeviceId=Pycom-SK;SharedAccessKey=5Hu6t9/O6s7OX2m3pu0m7td178cGHO4wEHDTT3vJgXM="
+CONNECTION_STRING_1 = "HostName=dieterIoTHub.azure-devices.net;DeviceId=lopy42SK;SharedAccessKey=yhvkZG5fQC+8yt5T2wE5pCU5bW2yrd8mhjlq0FEKTWU="
 
 
 #Topics of the The Things Network built-in broker

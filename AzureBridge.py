@@ -1,8 +1,8 @@
-
 import random
 import time
 
 from azure.iot.device import IoTHubDeviceClient, Message
+
 
 # The device connection string to authenticate the device with your IoT hub.
 # Get it using the Azure CLI:
@@ -12,10 +12,10 @@ def sendToAzure(device, message):
     try:
         client = IoTHubDeviceClient.create_from_connection_string(device)
         client.connect()
-        print( "Sending message: {}".format(message))
+        print("Sending message: {}".format(message))
         message = message.encode('utf8')
         client.send_message(message)
-        print ( "Message successfully sent" )
+        print("Message successfully sent")
         client.disconnect()
     except KeyboardInterrupt:
-        print ( "IoTHubBridge sample stopped" )
+        print("IoTHubBridge sample stopped")
